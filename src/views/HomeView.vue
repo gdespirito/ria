@@ -3,8 +3,10 @@ import { getWeather } from '@/services/weather'
 import { ref, onMounted, computed } from 'vue'
 import WeatherItem from '@/components/WeatherItem.vue'
 import WeatherDayCard from '@/components/WeatherDayCard.vue'
+import { WeatherResponse } from '@/types/weather'
 
 const activeTab = ref('Rio de Janeiro')
+const loading = ref(false)
 
 const cities = [
   {
@@ -27,21 +29,20 @@ const cities = [
 const weather = ref(null)
 
 const loadCurrentWeather = async (lat: number, lon: number) => {
+  loading.value = true
   weather.value = await getWeather(lat, lon)
+  loading.value = false
 }
 
 const handleCityClick = async (city: { lat: number; lon: number }) => {
   const { lat, lon } = city
   activeTab.value = city.name
   loadCurrentWeather(lat, lon)
-
-  // weather.value = weather
 }
 
 const getDayWeather = (date: string, weather: any) => {
   if (!weather) return null
 
-  console.log(weather.list)
   return weather.list.filter((item: any) => item.dt_txt.includes(date))
 }
 
@@ -49,9 +50,9 @@ onMounted(() => {
   loadCurrentWeather(cities[0].lat, cities[0].lon)
 })
 
-const getDays = (weather: any) => {
-  const days = weather.list.map((item: any) => item.dt_txt.split(' ')[0])
-  return [...new Set(days)]
+const getDays = (weather: WeatherResponse) => {
+  const days = weather.list.map((item) => item.dt_txt.split(' ')[0])
+  return [...new Set(days)] // Remove duplicates
 }
 
 const fiveDaysWeather = computed(() => {
@@ -62,6 +63,10 @@ const fiveDaysWeather = computed(() => {
     result.push(dayWeather)
   }
   return result
+})
+
+const nextHoursWeather = computed(() => {
+  return weather.value?.list.slice(0, 12)
 })
 </script>
 
@@ -98,10 +103,19 @@ const fiveDaysWeather = computed(() => {
               <!-- Weather content will go here -->
               <div class="flex flex-col gap-2">
                 <h2 class="text-lg font-semibold mb-4">Next hours</h2>
-                <div class="flex flex-row gap-2 overflow-x-auto">
+                <div v-if="loading" class="flex items-center justify-center p-4">
+                  <div class="animate-pulse flex flex-row gap-4 w-full">
+                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+                  </div>
+                </div>
+                <div class="flex flex-row gap-2 overflow-x-auto" v-else>
                   <div class="flex flex-row gap-10" v-if="weather">
                     <WeatherItem
-                      v-for="item in weather.list"
+                      v-for="item in nextHoursWeather"
                       :key="item.dt"
                       :time="item.dt_txt"
                       :temp="item.main.temp"
@@ -119,7 +133,16 @@ const fiveDaysWeather = computed(() => {
 
     <div class="flex flex-col gap-4" v-if="weather">
       <h2 class="text-xl font-semibold text-gray-800">Next 5 days</h2>
-      <div class="grid grid-cols-1 gap-4">
+      <div v-if="loading" class="flex items-center justify-center p-4">
+        <div class="animate-pulse flex flex-col gap-4 w-full">
+          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-4" v-else>
         <WeatherDayCard v-for="day in fiveDaysWeather" :key="day.dt" :day="day" />
       </div>
     </div>
