@@ -1,22 +1,42 @@
 <script setup lang="ts">
 import { getWeather } from '@/services/weather'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import NextHoursWeather from '@/components/NextHoursWeather.vue'
 import FiveDaysWeather from '@/components/FiveDaysWeather.vue'
 import { WeatherResponse } from '@/types/weather'
-import { cities } from '@/data/cities'
+import { searchCities, findCityByName, type City } from '@/services/searchCities'
 
 const activeTab = ref('Rio de Janeiro')
 const loading = ref(false)
+const searchQuery = ref('')
+const showSearchResults = ref(false)
 
-const handleCityClick = async (city: { lat: number; lon: number }) => {
+const filteredCities = computed(() => searchCities(searchQuery.value))
+
+const handleCityClick = async (city: City) => {
   const { lat, lon } = city
-  activeTab.value = city.name
+  activeTab.value = city.city_name
   loadCurrentWeather(lat, lon)
+  showSearchResults.value = false
+  searchQuery.value = ''
+}
+
+const handleSearchClick = () => {
+  showSearchResults.value = true
+}
+
+const handleSearchBlur = () => {
+  // Small delay to allow clicking on search results
+  setTimeout(() => {
+    showSearchResults.value = false
+  }, 200)
 }
 
 onMounted(() => {
-  loadCurrentWeather(cities[0].lat, cities[0].lon)
+  const rio = findCityByName('Rio de Janeiro')
+  if (rio) {
+    loadCurrentWeather(rio.lat, rio.lon)
+  }
 })
 
 const weather = ref<WeatherResponse | null>(null)
@@ -34,30 +54,41 @@ const loadCurrentWeather = async (lat: number, lon: number) => {
       <header>
         <div class="flex justify-between items-center">
           <h1 class="text-2xl font-bold">Weather App</h1>
-          <font-awesome-icon icon="search" class="text-xl cursor-pointer" />
+          <div class="relative">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search city..."
+              class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @click="handleSearchClick"
+              @blur="handleSearchBlur"
+            />
+            <!-- Search Results Dropdown -->
+            <div
+              v-if="showSearchResults && filteredCities.length > 0"
+              class="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto"
+            >
+              <div
+                v-for="city in filteredCities"
+                :key="`${city.city_name}-${city.country_code}-${city.lat}-${city.lon}`"
+                class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                @mousedown="handleCityClick(city)"
+              >
+                {{ city.city_name }}, {{ city.country_code }}
+              </div>
+            </div>
+          </div>
         </div>
       </header>
+    </div>
+
+    <h2 class="text-xl font-semibold mb-4">{{ activeTab }} Weather</h2>
+
+    <div class="shadow-lg bg-white my-10 rounded-md p-4">
       <main>
         <div class="flex flex-col gap-4">
-          <!-- Tabs -->
-          <div class="flex border-b border-gray-200 mt-5">
-            <button
-              v-for="city in cities"
-              :key="city.name"
-              class="px-4 py-2 text-sm font-medium"
-              :class="{
-                'border-b-2 border-blue-500 text-blue-600': activeTab === city.name,
-                'text-gray-500 hover:text-gray-700': activeTab !== city.name,
-              }"
-              @click="handleCityClick(city)"
-            >
-              {{ city.name }}
-            </button>
-          </div>
-
           <div class="flex flex-col gap-2">
             <div class="p-4">
-              <h2 class="text-xl font-semibold mb-4">Rio de Janeiro Weather</h2>
               <NextHoursWeather :weather="weather" :loading="loading" />
             </div>
           </div>
