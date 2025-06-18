@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { formatTime } from '../helpers'
 
 interface WeatherItemProps {
   time: string
@@ -8,12 +8,7 @@ interface WeatherItemProps {
   icon: string
 }
 
-const props = defineProps<WeatherItemProps>()
-
-const formattedTime = computed(() => {
-  const date = new Date(props.time)
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-})
+defineProps<WeatherItemProps>()
 </script>
 
 <template>
@@ -27,7 +22,7 @@ const formattedTime = computed(() => {
     </div>
 
     <div class="flex flex-col text-gray-800">
-      <p class="font-bold">{{ formattedTime }}</p>
+      <p class="font-bold">{{ formatTime(time) }}</p>
       <p class="font-semibold">{{ temp }}°C</p>
       <p class="text-gray-400 text-sm">{{ pop }}%</p>
     </div>

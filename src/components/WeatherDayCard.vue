@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatDate } from '../helpers'
 
 interface WeatherDayCardProps {
   day: {
@@ -17,15 +18,6 @@ const minTemperature = computed(() => {
 const maxTemperature = computed(() => {
   return Math.max(...props.day.map((item) => item.main.temp_max))
 })
-
-const formattedDate = computed(() => {
-  const date = new Date(props.day[0].dt_txt)
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  })
-})
 </script>
 
 <template>
@@ -41,7 +33,7 @@ const formattedDate = computed(() => {
         />
       </div>
       <div class="flex flex-col">
-        <h4 class="font-medium text-gray-900">{{ formattedDate }}</h4>
+        <h4 class="font-medium text-gray-900">{{ formatDate(day[0].dt_txt) }}</h4>
         <p class="text-sm text-gray-600">{{ day[0].weather[0].main }}</p>
       </div>
     </div>
