@@ -4,35 +4,10 @@ import { ref, onMounted, computed } from 'vue'
 import WeatherItem from '@/components/WeatherItem.vue'
 import WeatherDayCard from '@/components/WeatherDayCard.vue'
 import { WeatherResponse } from '@/types/weather'
+import { cities } from '@/data/cities'
 
 const activeTab = ref('Rio de Janeiro')
 const loading = ref(false)
-
-const cities = [
-  {
-    name: 'Rio de Janeiro',
-    lat: -22.9068,
-    lon: -43.1729,
-  },
-  {
-    name: 'Beijing',
-    lat: 39.9042,
-    lon: 116.4074,
-  },
-  {
-    name: 'Los Angeles',
-    lat: 34.0522,
-    lon: -118.2437,
-  },
-]
-
-const weather = ref(null)
-
-const loadCurrentWeather = async (lat: number, lon: number) => {
-  loading.value = true
-  weather.value = await getWeather(lat, lon)
-  loading.value = false
-}
 
 const handleCityClick = async (city: { lat: number; lon: number }) => {
   const { lat, lon } = city
@@ -40,15 +15,23 @@ const handleCityClick = async (city: { lat: number; lon: number }) => {
   loadCurrentWeather(lat, lon)
 }
 
-const getDayWeather = (date: string, weather: any) => {
-  if (!weather) return null
-
-  return weather.list.filter((item: any) => item.dt_txt.includes(date))
-}
-
 onMounted(() => {
   loadCurrentWeather(cities[0].lat, cities[0].lon)
 })
+
+const getDayWeather = (date: string, weather: WeatherResponse | null) => {
+  if (!weather) return null
+
+  return weather.list.filter((item) => item.dt_txt.includes(date))
+}
+
+const weather = ref<WeatherResponse | null>(null)
+
+const loadCurrentWeather = async (lat: number, lon: number) => {
+  loading.value = true
+  weather.value = await getWeather(lat, lon)
+  loading.value = false
+}
 
 const getDays = (weather: WeatherResponse) => {
   const days = weather.list.map((item) => item.dt_txt.split(' ')[0])
