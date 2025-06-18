@@ -1,0 +1,35 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+interface WeatherItemProps {
+  time: string
+  temp: number
+  pop: number
+  icon: string
+}
+
+const props = defineProps<WeatherItemProps>()
+
+const formattedTime = computed(() => {
+  const date = new Date(props.time)
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+})
+</script>
+
+<template>
+  <div class="flex items-center gap-2">
+    <div class="w-14 h-14">
+      <img
+        :src="`https://openweathermap.org/img/wn/${icon}@2x.png`"
+        class="w-full h-full object-cover"
+        alt="weather icon"
+      />
+    </div>
+
+    <div class="flex flex-col text-gray-800">
+      <p class="font-bold">{{ formattedTime }}</p>
+      <p class="font-semibold">{{ temp }}°C</p>
+      <p class="text-gray-400 text-sm">{{ pop }}%</p>
+    </div>
+  </div>
+</template>
