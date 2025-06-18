@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { getWeather } from '@/services/weather'
-import { ref, onMounted, computed } from 'vue'
-import WeatherItem from '@/components/WeatherItem.vue'
-import WeatherDayCard from '@/components/WeatherDayCard.vue'
+import { ref, onMounted } from 'vue'
+import NextHoursWeather from '@/components/NextHoursWeather.vue'
+import FiveDaysWeather from '@/components/FiveDaysWeather.vue'
 import { WeatherResponse } from '@/types/weather'
 import { cities } from '@/data/cities'
 
@@ -19,12 +19,6 @@ onMounted(() => {
   loadCurrentWeather(cities[0].lat, cities[0].lon)
 })
 
-const getDayWeather = (date: string, weather: WeatherResponse | null) => {
-  if (!weather) return null
-
-  return weather.list.filter((item) => item.dt_txt.includes(date))
-}
-
 const weather = ref<WeatherResponse | null>(null)
 
 const loadCurrentWeather = async (lat: number, lon: number) => {
@@ -32,25 +26,6 @@ const loadCurrentWeather = async (lat: number, lon: number) => {
   weather.value = await getWeather(lat, lon)
   loading.value = false
 }
-
-const getDays = (weather: WeatherResponse) => {
-  const days = weather.list.map((item) => item.dt_txt.split(' ')[0])
-  return [...new Set(days)] // Remove duplicates
-}
-
-const fiveDaysWeather = computed(() => {
-  const days = getDays(weather.value)
-  const result = []
-  for (const day of days) {
-    const dayWeather = getDayWeather(day, weather.value)
-    result.push(dayWeather)
-  }
-  return result
-})
-
-const nextHoursWeather = computed(() => {
-  return weather.value?.list.slice(0, 12)
-})
 </script>
 
 <template>
@@ -83,51 +58,13 @@ const nextHoursWeather = computed(() => {
           <div class="flex flex-col gap-2">
             <div class="p-4">
               <h2 class="text-xl font-semibold mb-4">Rio de Janeiro Weather</h2>
-              <!-- Weather content will go here -->
-              <div class="flex flex-col gap-2">
-                <h2 class="text-lg font-semibold mb-4">Next hours</h2>
-                <div v-if="loading" class="flex items-center justify-center p-4">
-                  <div class="animate-pulse flex flex-row gap-4 w-full">
-                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div class="h-20 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
-                  </div>
-                </div>
-                <div class="flex flex-row gap-2 overflow-x-auto" v-else>
-                  <div class="flex flex-row gap-10" v-if="weather">
-                    <WeatherItem
-                      v-for="item in nextHoursWeather"
-                      :key="item.dt"
-                      :time="item.dt_txt"
-                      :temp="item.main.temp"
-                      :pop="item.pop"
-                      :icon="item.weather[0].icon"
-                    />
-                  </div>
-                </div>
-              </div>
+              <NextHoursWeather :weather="weather" :loading="loading" />
             </div>
           </div>
         </div>
       </main>
     </div>
 
-    <div class="flex flex-col gap-4" v-if="weather">
-      <h2 class="text-xl font-semibold text-gray-800">Next 5 days</h2>
-      <div v-if="loading" class="flex items-center justify-center p-4">
-        <div class="animate-pulse flex flex-col gap-4 w-full">
-          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
-          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
-          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
-          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
-          <div class="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 gap-4" v-else>
-        <WeatherDayCard v-for="day in fiveDaysWeather" :key="day.dt" :day="day" />
-      </div>
-    </div>
+    <FiveDaysWeather v-if="weather" :weather="weather" :loading="loading" />
   </div>
 </template>
